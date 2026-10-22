@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0f1d">
+  <title>VoicePath AI – Voice-First Indoor Navigation</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+
+  <!-- Screen Reader Live Announcement Regions -->
+  <div id="sr-announcements-polite" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+  <div id="sr-announcements-assertive" class="visually-hidden" aria-live="assertive" aria-atomic="true"></div>
+
+  <!-- Mandatory Start Gesture Modal -->
+  <div id="welcome-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-heading" aria-label="Welcome to VoicePath AI" data-content-description="Welcome to VoicePath AI dialog">
+    <div class="modal-content">
+      <div class="brand-logo-icon" style="margin: 0 auto 16px;">🎙️</div>
+      <h2 id="modal-heading">VoicePath AI</h2>
+      <p>Navigate indoors by voice with landmark-based directions and human assistance.</p>
+      <button type="button" id="btn-start-app" class="btn-start-hero" autofocus aria-label="Start VoicePath Navigation" data-content-description="Start VoicePath Navigation">
+        ▶ Start Navigation
+      </button>
+      <p style="margin-top: 16px; font-size: 13px; color: #94a3b8;">
+        Tapping Start enables voice directions and speech recognition.
+      </p>
+    </div>
+  </div>
+
+  <!-- Main App Header -->
+  <header class="app-header" role="banner">
+    <div class="brand-wrapper">
+      <div class="brand-logo-icon" aria-hidden="true">🎙️</div>
+      <div>
+        <h1 class="brand-title">VoicePath AI</h1>
+        <div class="brand-tagline">Navigate by Voice, Move with Confidence</div>
+      </div>
+    </div>
+
+    <nav class="header-actions" aria-label="Preferences">
+      <button type="button" id="btn-toggle-screen-reader" class="btn btn-outline btn-sm" aria-pressed="false" aria-label="Toggle Screen Reader Mode" data-content-description="Toggle Screen Reader Mode">
+        Screen Reader: OFF
+      </button>
+      <button type="button" id="btn-step-free" class="btn btn-outline btn-sm" aria-pressed="false" aria-label="Toggle Step-free and wheelchair accessible mode" data-content-description="Toggle Step-free and wheelchair accessible mode">
+        ♿ Step-Free
+      </button>
+      <a href="admin.html" class="btn btn-outline btn-sm" aria-label="Open Admin Map Editor" data-content-description="Open Admin Map Editor">⚙️ Admin</a>
+      <a href="guard.html" target="_blank" class="btn btn-outline btn-sm" aria-label="Open Guard Alert Dashboard" data-content-description="Open Guard Alert Dashboard">🛡️ Guard Screen</a>
+    </nav>
+  </header>
+
+  <!-- Person Detected Alert Banner (Safety Layer 1) -->
+  <aside id="person-detected-banner" class="person-alert-banner" role="alert" aria-live="assertive" aria-label="Person detected ahead alert" data-content-description="Person detected ahead alert">
+    <span style="font-size: 24px;">⚠️</span>
+    <div>
+      <strong>Person detected ahead!</strong>
+      <div style="font-size: 13px; opacity: 0.9;">Please slow down. Tap Call Guard if you need help.</div>
+    </div>
+  </aside>
+
+  <!-- Main Content Layout -->
+  <main class="main-container" role="main">
+
+    <!-- Left Column: Voice Guidance & Core Controls -->
+    <section class="controls-column" aria-label="Navigation Controls">
+
+      <!-- Active Step Instruction Card -->
+      <article class="instruction-hero-card" aria-label="Current Step Instruction">
+        <div class="instruction-header">
+          <div class="step-label">Current Step</div>
+          <span id="step-progress-indicator" class="pill-badge" style="display: none;">Step 1 of 4</span>
+        </div>
+
+        <div class="turn-display">
+          <div id="active-turn-icon" class="turn-icon-box" aria-hidden="true">🎙️</div>
+          <div class="instruction-text-block">
+            <h2 id="active-step-text" class="instruction-text">
+              Where would you like to go? Tap mic or speak destination.
+            </h2>
+            <div class="pills-container">
+              <span id="step-landmark-badge" class="pill-badge" style="display: none;"></span>
+              <span id="step-distance-badge" class="pill-badge" style="display: none;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Push to Talk Mic Button -->
+        <div class="mic-control-section">
+          <button type="button" id="btn-push-to-talk" class="btn btn-mic-hero" aria-label="Push to talk microphone. Say destination or command." data-content-description="Push to talk microphone. Say destination or command">
+            <span>🎙️</span>
+            <span id="mic-label-text">Tap to Speak</span>
+          </button>
+        </div>
+
+        <!-- Step Navigation Action Bar -->
+        <div class="nav-actions-grid">
+          <button type="button" id="btn-next-step" class="btn btn-next-step" aria-label="Next Step instruction (shortcut: N)" data-content-description="Next Step instruction (shortcut: N)">
+            Next Step ➡️
+          </button>
+          <button type="button" id="btn-repeat-step" class="btn btn-repeat-step" aria-label="Repeat current instruction (shortcut: R)" data-content-description="Repeat current instruction (shortcut: R)">
+            Repeat 🔁
+          </button>
+          <button type="button" id="btn-stop-nav" class="btn btn-stop-nav" aria-label="Stop navigation (shortcut: Esc)" data-content-description="Stop navigation (shortcut: Escape)">
+            Stop ⏹️
+          </button>
+        </div>
+
+        <!-- Safety & Human-in-the-Loop Help -->
+        <div class="safety-bar">
+          <button type="button" id="btn-call-guard" class="btn btn-guard" aria-label="Call security guard for assistance (shortcut: G)" data-content-description="Call security guard for assistance (shortcut: G)">
+            🛡️ Call Guard
+          </button>
+          <button type="button" id="btn-report-problem" class="btn btn-report-block" aria-label="Report blocked corridor or obstacle" data-content-description="Report blocked corridor or obstacle">
+            🚧 Path Blocked
+          </button>
+        </div>
+
+        <!-- Real-time Status Bar -->
+        <div class="status-bar" aria-live="polite">
+          <span id="status-bar-message" class="status-idle">VoicePath AI Ready</span>
+          <span style="font-size: 13px; color: #94a3b8;">
+            Near: <strong id="current-location-text" style="color: #f8fafc;">Main Entrance</strong>
+          </span>
+        </div>
+      </article>
+
+      <!-- Quick Destination Picker (Accessibility Fallback for Noise) -->
+      <section class="destinations-section" aria-label="Quick Destination Buttons">
+        <h3 class="section-title">Quick Destinations:</h3>
+        <div id="quick-destinations-grid" class="destinations-grid"></div>
+      </section>
+
+      <!-- "Saathi" – Proactive AI Companion (Live Video + Voice) -->
+      <section class="destinations-section" style="margin-top: 16px; border: 2px solid var(--accent-cyan); background: linear-gradient(180deg, #131d31, #0d1527);" aria-label="Saathi AI Companion">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 26px;">🤝</span>
+            <div>
+              <h3 class="section-title" style="margin-bottom: 2px; color: #38bdf8;">
+                Saathi – AI Companion
+              </h3>
+              <div style="font-size: 13px; color: #94a3b8;">
+                Autonomous visual guidance and real-time voice assistance.
+              </div>
+            </div>
+          </div>
+          <span id="live-ai-status-indicator" class="pill-badge" style="background: #0369a1; color: #ffffff;">Standby</span>
+        </div>
+
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
+          <button type="button" id="btn-toggle-live-ai" class="btn btn-primary" aria-label="Start or Stop Saathi AI Companion session" data-content-description="Start or Stop Saathi AI Companion session">
+            🤝 Start Saathi (Video + Voice)
+          </button>
+          <button type="button" id="btn-toggle-proactive-mode" class="btn btn-success btn-sm" aria-label="Toggle autonomous proactive guidance" data-content-description="Toggle autonomous proactive guidance">
+            🤖 Proactive Guide: ON
+          </button>
+          <button type="button" id="btn-config-gemini-key" class="btn btn-outline btn-sm" aria-label="Check Gemini server connection status" data-content-description="Check Gemini server connection status">
+            🔑 Gemini Status
+          </button>
+          <button type="button" id="btn-toggle-camera" class="btn btn-outline btn-sm" aria-label="Toggle camera view" data-content-description="Toggle camera view">
+            📷 Camera View
+          </button>
+          <button type="button" id="btn-simulate-block" class="btn btn-outline btn-sm" aria-label="Simulate blocking corridor for demo" data-content-description="Simulate blocking corridor for demo">
+            ⚡ Toggle Corridor Block
+          </button>
+          <select id="qr-checkpoint-select" class="btn btn-outline btn-sm" style="background: var(--bg-card); color: var(--text-main);" aria-label="Simulate scanning a physical QR checkpoint" data-content-description="Simulate scanning a physical QR checkpoint">
+            <option value="">-- Scan QR Checkpoint --</option>
+          </select>
+        </div>
+
+        <!-- Video stream preview -->
+        <video id="safety-camera-feed" playsinline muted style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 12px; margin-bottom: 12px; display: none; border: 2px solid var(--accent-cyan);"></video>
+
+        <!-- Saathi AI Companion Quick Prompts -->
+        <div id="live-ai-quick-prompts" style="display: none; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+          <button type="button" class="btn btn-outline btn-sm btn-live-prompt" data-prompt="What is ahead of me? Describe briefly." aria-label="Ask Saathi: What is ahead?" data-content-description="Ask Saathi: What is ahead?">
+            👁️ What is ahead?
+          </button>
+          <button type="button" class="btn btn-outline btn-sm btn-live-prompt" data-prompt="Are there any signboards or room numbers visible? Please read them." aria-label="Ask Saathi: Read signboards" data-content-description="Ask Saathi: Read signboards">
+            📖 Read signboards
+          </button>
+          <button type="button" class="btn btn-outline btn-sm btn-live-prompt" data-prompt="Are there any people or obstacles ahead? Check carefully." aria-label="Ask Saathi: Safety check" data-content-description="Ask Saathi: Safety check">
+            ⚠️ Safety check
+          </button>
+          <button type="button" class="btn btn-outline btn-sm btn-live-prompt" data-prompt="Describe the immediate surroundings briefly." aria-label="Ask Saathi: Describe surroundings" data-content-description="Ask Saathi: Describe surroundings">
+            🚶 Surroundings
+          </button>
+        </div>
+
+        <!-- Real-time Conversational Transcript HUD -->
+        <div id="live-ai-transcript-box" style="display: none; max-height: 150px; overflow-y: auto; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 12px; font-size: 14px; line-height: 1.4;">
+          <div style="color: var(--text-muted); font-style: italic;">Transcripts and live responses will appear here...</div>
+        </div>
+      </section>
+    </section>
+
+    <!-- Right Column: Interactive Sighted Helper SVG Map -->
+    <section class="map-column" aria-label="Indoor Map Visualizer">
+      <div class="map-card">
+        <div class="map-header">
+          <h2 class="map-title">Floor Map & Route Overview</h2>
+          <span style="font-size: 13px; color: var(--accent-cyan); font-weight: 600;">College Block A</span>
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 6px;">
+          Visual map for sighted helpers and judges. Blind users navigate via spoken landmarks and audio cues.
+        </p>
+        <div class="svg-container">
+          <svg id="indoor-map-svg" viewBox="0 0 800 580" role="img" aria-hidden="true"></svg>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Safety & Honesty Statement Footer -->
+  <footer class="app-footer" role="contentinfo">
+    <p>
+      <strong>Safety Statement:</strong> VoicePath AI is an assistive prototype. It does not detect all obstacles, hazards, or closed doors, and its position is an estimate based on step progression. It is a supplement to a white cane or guide dog and never a replacement. Users must always use their own judgement and seek human assistance when unsure.
+    </p>
+    <p style="margin-top: 6px; font-size: 12px; opacity: 0.8;">
+      Privacy First: Camera frames are processed strictly in-device memory and are never stored or transmitted.
+    </p>
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

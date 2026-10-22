@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "status": "published",
+  "floor": 0,
+  "building": "Academic Block A",
+  "startNode": "draft_entry",
+  "nodes": {
+    "draft_entry": {
+      "x": 50,
+      "y": 100,
+      "name": "Draft Entrance",
+      "type": "entrance",
+      "evidence": {
+        "observationCount": 3,
+        "confidence": 0.92,
+        "traces": [
+          "trace_1",
+          "trace_2"
+        ]
+      }
+    },
+    "draft_junction": {
+      "x": 150,
+      "y": 100,
+      "name": "Draft Corridor Junction",
+      "type": "junction",
+      "evidence": {
+        "observationCount": 2,
+        "confidence": 0.88
+      }
+    },
+    "draft_exit": {
+      "x": 250,
+      "y": 100,
+      "name": "Emergency Exit",
+      "type": "exit",
+      "evidence": {
+        "observationCount": 2,
+        "confidence": 0.9
+      }
+    }
+  },
+  "edges": [
+    {
+      "id": "e_draft_1",
+      "from": "draft_entry",
+      "to": "draft_junction",
+      "dist": 10,
+      "stepFree": false,
+      "evidence": {
+        "observationCount": 2,
+        "confidence": 0.85
+      }
+    },
+    {
+      "id": "e_draft_2",
+      "from": "draft_junction",
+      "to": "draft_exit",
+      "dist": 10,
+      "stepFree": true,
+      "evidence": {
+        "observationCount": 3,
+        "confidence": 0.94
+      }
+    }
+  ],
+  "walkVerification": {
+    "verifiedBy": "admin_rohit",
+    "walkTimestamp": "2026-10-22T08:28:06.950Z",
+    "walkTraceId": "trace_walk_test_01",
+    "testPassed": true,
+    "notes": "Physical walkthrough completed successfully. All landmarks confirmed."
+  },
+  "lastVerified": "2026-10-22",
+  "publishedBy": "admin"
+}

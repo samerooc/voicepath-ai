@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoicePath AI – Admin Indoor Map Editor</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .admin-layout {
+      max-width: 1300px;
+      margin: 20px auto;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    @media (min-width: 960px) {
+      .admin-layout {
+        grid-template-columns: 1.3fr 0.7fr;
+      }
+    }
+    .panel-card {
+      background: var(--bg-surface);
+      border: 2px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 14px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+    .form-control {
+      width: 100%;
+      min-height: 44px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: var(--text-main);
+      font-size: 15px;
+      font-family: inherit;
+    }
+    .form-control:focus {
+      outline: 2px solid var(--accent-cyan);
+    }
+    .badge-error {
+      background: #7f1d1d;
+      color: #fca5a5;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    .badge-warning {
+      background: #78350f;
+      color: #fde68a;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    .badge-success {
+      background: #14532d;
+      color: #86efac;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    th {
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="brand-wrapper">
+      <div class="brand-logo-icon">⚙️</div>
+      <div>
+        <h1 class="brand-title">Admin Map & Corridor Editor</h1>
+        <div class="brand-tagline">Manage Rooms, Block Corridors, & Export Map Graph</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button type="button" id="btn-admin-undo" class="btn btn-outline btn-sm">↩ Undo</button>
+      <button type="button" id="btn-admin-redo" class="btn btn-outline btn-sm">↪ Redo</button>
+      <button type="button" id="btn-admin-save" class="btn btn-success btn-sm">💾 Save Map</button>
+      <button type="button" id="btn-admin-export" class="btn btn-primary btn-sm">📥 Export JSON</button>
+      <a href="index.html" class="btn btn-outline btn-sm">⬅ User App</a>
+    </div>
+  </header>
+
+  <main class="admin-layout">
+
+    <!-- Left Column: Interactive Map & Edges Table -->
+    <section>
+      <div class="panel-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3>Interactive Floor Plan (Click Edge to Block/Unblock, Click Node to Edit)</h3>
+        </div>
+        <div class="svg-container" style="aspect-ratio: 16 / 10;">
+          <svg id="admin-map-svg" viewBox="0 0 800 580" style="width: 100%; height: 100%;"></svg>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <h3 style="margin-bottom: 12px;">Corridor Edges Management</h3>
+        <div style="max-height: 280px; overflow-y: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Path</th>
+                <th>Distance</th>
+                <th>Status</th>
+                <th>Step-Free</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-edges-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Validation & Node/Edge Forms -->
+    <aside>
+      <!-- Validation Status Panel -->
+      <div class="panel-card">
+        <h3>Graph Integrity & Validation</h3>
+        <div id="admin-validation-results" style="margin-top: 10px;"></div>
+      </div>
+
+      <!-- Add New Node Form -->
+      <div class="panel-card">
+        <h3>Add Room / Checkpoint Node</h3>
+        <form id="form-add-node" style="margin-top: 12px;">
+          <div class="form-group">
+            <label for="new-node-id">Unique Node ID (e.g. lab_102)</label>
+            <input type="text" id="new-node-id" class="form-control" required placeholder="chemistry_lab">
+          </div>
+          <div class="form-group">
+            <label for="new-node-name">Display Name</label>
+            <input type="text" id="new-node-name" class="form-control" required placeholder="Chemistry Lab">
+          </div>
+          <div class="form-group">
+            <label for="new-node-type">Node Type</label>
+            <select id="new-node-type" class="form-control">
+              <option value="room">Room</option>
+              <option value="junction">Junction / Corridor Crossing</option>
+              <option value="help_point">Help Point / Reception</option>
+              <option value="stairs">Stairs</option>
+              <option value="lift">Elevator / Lift</option>
+              <option value="exit">Emergency Exit</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="new-node-landmark">Tactile Landmark Description</label>
+            <input type="text" id="new-node-landmark" class="form-control" placeholder="Glass door with braille nameplate">
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="form-group">
+              <label for="new-node-x">X Coordinate</label>
+              <input type="number" id="new-node-x" class="form-control" value="450">
+            </div>
+            <div class="form-group">
+              <label for="new-node-y">Y Coordinate</label>
+              <input type="number" id="new-node-y" class="form-control" value="260">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">+ Add Node to Graph</button>
+        </form>
+      </div>
+
+      <!-- Add New Edge Form -->
+      <div class="panel-card">
+        <h3>Connect Corridors (Add Edge)</h3>
+        <form id="form-add-edge" style="margin-top: 12px;">
+          <div class="form-group">
+            <label for="edge-from-select">From Node</label>
+            <select id="edge-from-select" class="form-control"></select>
+          </div>
+          <div class="form-group">
+            <label for="edge-to-select">To Node</label>
+            <select id="edge-to-select" class="form-control"></select>
+          </div>
+          <div class="form-group">
+            <label for="edge-dist-input">Distance (Metres)</label>
+            <input type="number" id="edge-dist-input" class="form-control" value="12" min="1">
+          </div>
+          <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+            <input type="checkbox" id="edge-stepfree-checkbox" checked style="width: 20px; height: 20px;">
+            <label for="edge-stepfree-checkbox" style="margin-bottom: 0;">Step-free (Wheelchair Accessible)</label>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">+ Connect Corridor</button>
+        </form>
+      </div>
+
+      <!-- Import & Reset -->
+      <div class="panel-card">
+        <h3>Data Management</h3>
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+          <label class="btn btn-outline" style="text-align: center; cursor: pointer;">
+            📤 Import JSON Map
+            <input type="file" id="input-import-file" accept=".json" style="display: none;">
+          </label>
+          <button type="button" id="btn-admin-reset" class="btn btn-danger btn-sm">⚠️ Reset to Factory Default Map</button>
+        </div>
+      </div>
+    </aside>
+
+  </main>
+
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoicePath AI – Automated Test Runner</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .test-box {
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 24px;
+      background: var(--bg-surface);
+      border: 2px solid var(--border-subtle);
+      border-radius: 16px;
+    }
+    .test-item {
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+    }
+    .test-pass {
+      border-left: 4px solid #22c55e;
+      color: #86efac;
+    }
+    .test-fail {
+      border-left: 4px solid #ef4444;
+      color: #fca5a5;
+    }
+    .summary-badge {
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 16px;
+      margin-top: 16px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="brand-wrapper">
+      <div class="brand-logo-icon">🧪</div>
+      <div>
+        <h1 class="brand-title">Test Runner Suite</h1>
+        <div class="brand-tagline">Automated Unit Verification for VoicePath AI</div>
+      </div>
+    </div>
+    <a href="../index.html" class="btn btn-outline btn-sm">⬅ User App</a>
+  </header>
+
+  <main class="test-box">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h2>Unit Tests Execution</h2>
+      <button type="button" id="btn-rerun-tests" class="btn btn-primary btn-sm">🔄 Rerun All Tests</button>
+    </div>
+
+    <div id="test-results-list"></div>
+    <div id="test-summary-box"></div>
+  </main>
+
+  <script type="module">
+    import { runRouterTests } from "./router.test.js";
+    import { runDirectionsTests } from "./directions.test.js";
+    import { runFuzzyTests } from "./fuzzy.test.js";
+    import { runMapValidatorTests } from "./mapValidator.test.js";
+
+    const resultsList = document.getElementById("test-results-list");
+    const summaryBox = document.getElementById("test-summary-box");
+
+    function executeSuite() {
+      resultsList.innerHTML = "";
+      summaryBox.innerHTML = "";
+
+      let total = 0;
+      let passed = 0;
+      let failed = 0;
+
+      function createAssert(suiteName) {
+        return {
+          ok(val, desc = "Assertion passed") {
+            total++;
+            if (val) {
+              passed++;
+              logResult(suiteName, desc, true);
+            } else {
+              failed++;
+              logResult(suiteName, desc, false, `Expected truthy, got: ${val}`);
+            }
+          },
+          equal(actual, expected, desc = "Equal assertion") {
+            total++;
+            if (actual === expected) {
+              passed++;
+              logResult(suiteName, desc, true);
+            } else {
+              failed++;
+              logResult(suiteName, desc, false, `Expected: ${expected}, got: ${actual}`);
+            }
+          },
+          deepEqual(actual, expected, desc = "Deep equal assertion") {
+            total++;
+            const sAct = JSON.stringify(actual);
+            const sExp = JSON.stringify(expected);
+            if (sAct === sExp) {
+              passed++;
+              logResult(suiteName, desc, true);
+            } else {
+              failed++;
+              logResult(suiteName, desc, false, `Expected: ${sExp}, got: ${sAct}`);
+            }
+          }
+        };
+      }
+
+      function logResult(suite, desc, pass, errorMsg = "") {
+        const div = document.createElement("div");
+        div.className = `test-item ${pass ? 'test-pass' : 'test-fail'}`;
+        div.innerHTML = `
+          <span><strong>[${suite}]</strong> ${desc}</span>
+          <span>${pass ? '✓ PASS' : '✗ FAIL: ' + errorMsg}</span>
+        `;
+        resultsList.appendChild(div);
+      }
+
+      try {
+        runRouterTests(createAssert("Router"));
+        runDirectionsTests(createAssert("Directions"));
+        runFuzzyTests(createAssert("Fuzzy Matcher"));
+        runMapValidatorTests(createAssert("Map Validator"));
+      } catch (err) {
+        failed++;
+        logResult("Suite Error", err.message, false);
+      }
+
+      if (failed === 0) {
+        summaryBox.className = "summary-badge";
+        summaryBox.style.background = "#14532d";
+        summaryBox.style.color = "#86efac";
+        summaryBox.textContent = `All ${passed} tests PASSED! (0 failures)`;
+      } else {
+        summaryBox.className = "summary-badge";
+        summaryBox.style.background = "#7f1d1d";
+        summaryBox.style.color = "#fca5a5";
+        summaryBox.textContent = `${failed} tests FAILED out of ${total} total assertions.`;
+      }
+    }
+
+    document.getElementById("btn-rerun-tests").addEventListener("click", executeSuite);
+    executeSuite();
+  </script>
+</body>
+</html>

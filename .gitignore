@@ -1,0 +1,25 @@
+# Environment variables & secrets (CRITICAL)
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+npm-debug.log*
+
+# Android build outputs & local config
+android.zip
+android/.gradle/
+android/.idea/
+android/local.properties
+android/**/build/
+android/app/build/
+android/direct_build/
+
+# Runtime data & logs
+data/map-history/
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,23 @@
+{
+  "name": "voicepath-ai",
+  "version": "1.0.0",
+  "description": "Voice-First Indoor Navigation with Dijkstra routing, bilingual speech, and guard dispatch",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node tests/run-node-tests.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": [
+    "indoor-navigation",
+    "accessibility",
+    "dijkstra",
+    "voice-first",
+    "gemini"
+  ],
+  "author": "",
+  "license": "MIT"
+}
